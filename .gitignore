@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Almacenamiento local de datos CRM
 data.json
+
+# Documentación interna (no subir a repositorio público)
+/manual
