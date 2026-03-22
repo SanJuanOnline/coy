@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Users, Wallet, Menu, X, UserCircle, Bell, Moon, Sun } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { db } from "@/lib/db";
 import Swal from "sweetalert2";
 import { useTheme } from "@/lib/ThemeContext";
@@ -18,7 +18,16 @@ export default function Header() {
   const [open, setOpen] = useState(false);
   const [menuCuenta, setMenuCuenta] = useState(false);
   const [notificaciones, setNotificaciones] = useState(false);
+  const [username, setUsername] = useState("");
   const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    fetch("/api/auth")
+      .then(res => res.json())
+      .then(data => {
+        if (data.username) setUsername(data.username);
+      });
+  }, []);
 
   const handleBorrarTodo = async () => {
     const result = await Swal.fire({
@@ -104,7 +113,7 @@ export default function Header() {
           <div style={{ position: "relative" }} className="hidden md:block">
             <button onClick={() => setMenuCuenta(!menuCuenta)} className="account-btn">
               <UserCircle style={{ width: 20, height: 20 }} />
-              <span>Cuenta</span>
+              <span>{username || "Cuenta"}</span>
             </button>
 
             {menuCuenta && (

@@ -2,48 +2,60 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
-const PIN_FILE = path.join(process.cwd(), "user-pin.json");
+const CREDENTIALS_FILE = path.join(process.cwd(), "user-credentials.json");
 
-function readPin(): string | null {
+interface Credentials {
+  username: string;
+  password: string;
+}
+
+function readCredentials(): Credentials | null {
   try {
-    const data = fs.readFileSync(PIN_FILE, "utf-8");
-    const json = JSON.parse(data);
-    return json.pin || null;
+    const data = fs.readFileSync(CREDENTIALS_FILE, "utf-8");
+    return JSON.parse(data);
   } catch {
     return null;
   }
 }
 
-function writePin(pin: string): void {
-  fs.writeFileSync(PIN_FILE, JSON.stringify({ pin }, null, 2), "utf-8");
+function writeCredentials(username: string, password: string): void {
+  fs.writeFileSync(CREDENTIALS_FILE, JSON.stringify({ username, password }, null, 2), "utf-8");
 }
 
 export async function GET() {
-  const pin = readPin();
-  return NextResponse.json({ hasPin: !!pin });
+  const credentials = readCredentials();
+  return NextResponse.json({ hasUser: !!credentials, username: credentials?.username || null });
 }
 
 export async function POST(req: NextRequest) {
-  const { action, pin } = await req.json();
+  const { action, username, password } = await req.json();
 
   if (action === "create") {
-    const existingPin = readPin();
-    if (existingPin) {
-      return NextResponse.json({ ok: false, error: "Ya existe un PIN configurado" }, { status: 400 });
+    const existing = readCredentials();
+    if (existing) {
+      return NextResponse.json({ ok: false, error: "Ya existe un usuario configurado" }, { status: 400 });
     }
-    writePin(pin);
+    writeCredentials(username, password);
     return NextResponse.json({ ok: true });
   }
 
   if (action === "verify") {
-    const correctPin = readPin();
-    if (!correctPin) {
-      return NextResponse.json({ ok: false, error: "No hay PIN configurado" }, { status: 400 });
+    const credentials = readCredentials();
+    if (!credentials) {
+      return NextResponse.json({ ok: false, error: "No hay usuario configurado" }, { status: 400 });
     }
-    if (pin === correctPin) {
+    if (username === credentials.username && password === credentials.password) {
       return NextResponse.json({ ok: true });
     }
-    return NextResponse.json({ ok: false, error: "PIN incorrecto" }, { status: 401 });
+    return NextResponse.json({ ok: false, error: "Usuario o contraseña incorrectos" }, { status: 401 });
+  }
+
+  if (action === "recover") {
+    const credentials = readCredentials();
+    if (!credentials) {
+      return NextResponse.json({ ok: false, error: "No hay usuario configurado" }, { status: 400 });
+    }
+    return NextResponse.json({ ok: true, username: credentials.username, password: credentials.password });
   }
 
   return NextResponse.json({ ok: false, error: "Acción no válida" }, { status: 400 });

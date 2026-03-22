@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Box, Paper, Typography, TextField, Button } from "@mui/material";
 import LockIcon from "@mui/icons-material/Lock";
-import LockOpenIcon from "@mui/icons-material/LockOpen";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import Swal from "sweetalert2";
 
 interface LoginGuardProps {
@@ -12,39 +12,44 @@ interface LoginGuardProps {
 
 export default function LoginGuard({ children }: LoginGuardProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [hasPin, setHasPin] = useState<boolean | null>(null);
-  const [pin, setPin] = useState("");
-  const [confirmPin, setConfirmPin] = useState("");
+  const [hasUser, setHasUser] = useState<boolean | null>(null);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [recovering, setRecovering] = useState(false);
 
   useEffect(() => {
-    // Verificar si ya está autenticado
     const auth = sessionStorage.getItem("authenticated");
     if (auth === "true") {
       setIsAuthenticated(true);
       return;
     }
 
-    // Verificar si existe un PIN configurado
     fetch("/api/auth")
       .then(res => res.json())
       .then(data => {
-        setHasPin(data.hasPin);
-        setIsCreating(!data.hasPin);
+        setHasUser(data.hasUser);
+        setIsCreating(!data.hasUser);
       });
   }, []);
 
-  const handleCreatePin = async (e: React.FormEvent) => {
+  const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (pin.length !== 4) {
-      Swal.fire({ icon: "error", title: "Error", text: "El PIN debe tener 4 dígitos" });
+    if (username.length < 3) {
+      Swal.fire({ icon: "error", title: "Error", text: "El usuario debe tener al menos 3 caracteres" });
       return;
     }
 
-    if (pin !== confirmPin) {
-      Swal.fire({ icon: "error", title: "Error", text: "Los PINs no coinciden" });
+    if (password.length < 4) {
+      Swal.fire({ icon: "error", title: "Error", text: "La contraseña debe tener al menos 4 caracteres" });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Swal.fire({ icon: "error", title: "Error", text: "Las contraseñas no coinciden" });
       return;
     }
 
@@ -54,7 +59,7 @@ export default function LoginGuard({ children }: LoginGuardProps) {
       const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "create", pin })
+        body: JSON.stringify({ action: "create", username, password })
       });
 
       const data = await res.json();
@@ -62,8 +67,8 @@ export default function LoginGuard({ children }: LoginGuardProps) {
       if (data.ok) {
         await Swal.fire({ 
           icon: "success", 
-          title: "¡PIN creado!", 
-          text: "Tu PIN ha sido configurado correctamente",
+          title: "¡Usuario creado!", 
+          text: "Tu cuenta ha sido configurada correctamente",
           timer: 2000,
           showConfirmButton: false
         });
@@ -73,17 +78,17 @@ export default function LoginGuard({ children }: LoginGuardProps) {
         Swal.fire({ icon: "error", title: "Error", text: data.error });
       }
     } catch (error) {
-      Swal.fire({ icon: "error", title: "Error", text: "No se pudo crear el PIN" });
+      Swal.fire({ icon: "error", title: "Error", text: "No se pudo crear el usuario" });
     }
 
     setLoading(false);
   };
 
-  const handleVerifyPin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (pin.length !== 4) {
-      Swal.fire({ icon: "error", title: "Error", text: "El PIN debe tener 4 dígitos" });
+    if (!username || !password) {
+      Swal.fire({ icon: "error", title: "Error", text: "Completa todos los campos" });
       return;
     }
 
@@ -93,7 +98,7 @@ export default function LoginGuard({ children }: LoginGuardProps) {
       const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "verify", pin })
+        body: JSON.stringify({ action: "verify", username, password })
       });
 
       const data = await res.json();
@@ -101,23 +106,44 @@ export default function LoginGuard({ children }: LoginGuardProps) {
       if (data.ok) {
         sessionStorage.setItem("authenticated", "true");
         setIsAuthenticated(true);
-        setPin("");
       } else {
-        Swal.fire({ icon: "error", title: "PIN incorrecto", text: "Intenta nuevamente" });
-        setPin("");
+        Swal.fire({ icon: "error", title: "Error", text: data.error });
+        setPassword("");
       }
     } catch (error) {
-      Swal.fire({ icon: "error", title: "Error", text: "No se pudo verificar el PIN" });
+      Swal.fire({ icon: "error", title: "Error", text: "No se pudo verificar las credenciales" });
     }
 
     setLoading(false);
+  };
+
+  const handleRecover = async () => {
+    setRecovering(true);
+    try {
+      const res = await fetch("/api/recover", { method: "POST" });
+      const data = await res.json();
+
+      if (data.ok) {
+        await Swal.fire({ 
+          icon: "success", 
+          title: "¡Correo enviado!", 
+          text: "Revisa tu bandeja de entrada",
+          timer: 3000
+        });
+      } else {
+        Swal.fire({ icon: "error", title: "Error", text: "No se pudo enviar el correo" });
+      }
+    } catch (error) {
+      Swal.fire({ icon: "error", title: "Error", text: "Error al recuperar credenciales" });
+    }
+    setRecovering(false);
   };
 
   if (isAuthenticated) {
     return <>{children}</>;
   }
 
-  if (hasPin === null) {
+  if (hasUser === null) {
     return (
       <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Typography>Cargando...</Typography>
@@ -143,7 +169,6 @@ export default function LoginGuard({ children }: LoginGuardProps) {
         width: "100%",
         textAlign: "center"
       }}>
-        {/* Logo */}
         <Box sx={{ mb: 3 }}>
           <Box sx={{ 
             display: "inline-flex", 
@@ -156,72 +181,49 @@ export default function LoginGuard({ children }: LoginGuardProps) {
             boxShadow: isCreating ? "0 8px 24px rgba(5,150,105,0.3)" : "0 8px 24px rgba(59,130,246,0.3)",
             mb: 2
           }}>
-            {isCreating ? <LockOpenIcon sx={{ fontSize: 40, color: "#fff" }} /> : <LockIcon sx={{ fontSize: 40, color: "#fff" }} />}
+            {isCreating ? <PersonAddIcon sx={{ fontSize: 40, color: "#fff" }} /> : <LockIcon sx={{ fontSize: 40, color: "#fff" }} />}
           </Box>
           <Typography variant="h4" sx={{ fontWeight: 900, color: "#0f172a", mb: 1 }}>
             CRM Coy
           </Typography>
           <Typography sx={{ fontSize: "0.9rem", color: "#64748b" }}>
-            {isCreating ? "Crea tu PIN de acceso" : "Ingresa tu PIN"}
+            {isCreating ? "Crea tu cuenta" : "Iniciar sesión"}
           </Typography>
         </Box>
 
-        {/* Formulario */}
         {isCreating ? (
-          <Box component="form" onSubmit={handleCreatePin} sx={{ display: "grid", gap: 3 }}>
+          <Box component="form" onSubmit={handleCreateUser} sx={{ display: "grid", gap: 2.5 }}>
             <TextField
-              label="Nuevo PIN (4 dígitos)"
-              type="password"
-              value={pin}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, "").slice(0, 4);
-                setPin(value);
-              }}
-              placeholder="••••"
+              label="Usuario"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               fullWidth
               required
               autoFocus
-              inputProps={{ 
-                maxLength: 4,
-                inputMode: "numeric",
-                pattern: "[0-9]*",
-                style: { 
-                  textAlign: "center", 
-                  fontSize: "2rem", 
-                  letterSpacing: "1rem",
-                  fontWeight: 700
-                }
-              }}
             />
 
             <TextField
-              label="Confirmar PIN"
+              label="Contraseña"
               type="password"
-              value={confirmPin}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, "").slice(0, 4);
-                setConfirmPin(value);
-              }}
-              placeholder="••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               fullWidth
               required
-              inputProps={{ 
-                maxLength: 4,
-                inputMode: "numeric",
-                pattern: "[0-9]*",
-                style: { 
-                  textAlign: "center", 
-                  fontSize: "2rem", 
-                  letterSpacing: "1rem",
-                  fontWeight: 700
-                }
-              }}
+            />
+
+            <TextField
+              label="Confirmar contraseña"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              fullWidth
+              required
             />
 
             <Button
               type="submit"
               variant="contained"
-              disabled={loading || pin.length !== 4 || confirmPin.length !== 4}
+              disabled={loading}
               sx={{
                 background: "linear-gradient(135deg, #059669, #10b981)",
                 fontWeight: 700,
@@ -230,40 +232,33 @@ export default function LoginGuard({ children }: LoginGuardProps) {
                 textTransform: "none",
                 boxShadow: "0 4px 12px rgba(5,150,105,0.3)"
               }}>
-              {loading ? "Creando..." : "Crear PIN"}
+              {loading ? "Creando..." : "Crear cuenta"}
             </Button>
           </Box>
         ) : (
-          <Box component="form" onSubmit={handleVerifyPin} sx={{ display: "grid", gap: 3 }}>
+          <Box component="form" onSubmit={handleLogin} sx={{ display: "grid", gap: 2.5 }}>
             <TextField
-              label="PIN (4 dígitos)"
-              type="password"
-              value={pin}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, "").slice(0, 4);
-                setPin(value);
-              }}
-              placeholder="••••"
+              label="Usuario"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               fullWidth
               required
               autoFocus
-              inputProps={{ 
-                maxLength: 4,
-                inputMode: "numeric",
-                pattern: "[0-9]*",
-                style: { 
-                  textAlign: "center", 
-                  fontSize: "2rem", 
-                  letterSpacing: "1rem",
-                  fontWeight: 700
-                }
-              }}
+            />
+
+            <TextField
+              label="Contraseña"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              fullWidth
+              required
             />
 
             <Button
               type="submit"
               variant="contained"
-              disabled={loading || pin.length !== 4}
+              disabled={loading}
               sx={{
                 background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
                 fontWeight: 700,
@@ -273,6 +268,18 @@ export default function LoginGuard({ children }: LoginGuardProps) {
                 boxShadow: "0 4px 12px rgba(59,130,246,0.3)"
               }}>
               {loading ? "Verificando..." : "Ingresar"}
+            </Button>
+
+            <Button
+              onClick={handleRecover}
+              disabled={recovering}
+              sx={{
+                color: "#6b7280",
+                fontSize: "0.875rem",
+                textTransform: "none",
+                "&:hover": { color: "#3b82f6" }
+              }}>
+              {recovering ? "Enviando..." : "¿Olvidaste tu contraseña?"}
             </Button>
           </Box>
         )}

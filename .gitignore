@@ -46,6 +46,9 @@ data.json
 # PIN de usuario
 user-pin.json
 
+# Credenciales de usuario
+user-credentials.json
+
 # Configuración de email
 email-config.json
 
