@@ -1,13 +1,12 @@
-import fs from "fs";
-import path from "path";
+import { kv } from "@vercel/kv";
 import type { CrmData } from "./types";
 
-const FILE = path.join(process.cwd(), "data.json");
+const KEY = "crm:data";
 
-export function readData(): CrmData {
+export async function readData(): Promise<CrmData> {
   try {
-    const raw = fs.readFileSync(FILE, "utf-8");
-    const d = JSON.parse(raw) as CrmData;
+    const d = await kv.get<CrmData>(KEY);
+    if (!d) return { clientes: [], movimientos: [] };
     return {
       clientes: Array.isArray(d.clientes) ? d.clientes : [],
       movimientos: Array.isArray(d.movimientos) ? d.movimientos : [],
@@ -17,6 +16,6 @@ export function readData(): CrmData {
   }
 }
 
-export function writeData(data: CrmData): void {
-  fs.writeFileSync(FILE, JSON.stringify(data, null, 2), "utf-8");
+export async function writeData(data: CrmData): Promise<void> {
+  await kv.set(KEY, data);
 }
