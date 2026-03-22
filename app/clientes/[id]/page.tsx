@@ -97,11 +97,20 @@ export default function ClienteDetallePage() {
   };
 
   const handleNuevoPago = async () => {
+    const entradas = cliente.movimientos.filter(m => m.tipo === "prestamo");
+    const opcionesConceptos = entradas.map(e => `<option value="${e.concepto}">${e.concepto}</option>`).join("");
+
     const { value: formValues } = await Swal.fire({
       title: "✅ Registrar Salida",
       html: `
         <input id="monto" type="number" step="0.01" class="swal2-input" placeholder="Monto" required>
-        <input id="concepto" class="swal2-input" placeholder="Referencia" required>
+        ${entradas.length > 0
+          ? `<select id="concepto" class="swal2-input" style="cursor:pointer">
+               <option value="">-- Selecciona referencia --</option>
+               ${opcionesConceptos}
+             </select>`
+          : `<input id="concepto" class="swal2-input" placeholder="Referencia" required>`
+        }
         <input id="fecha" type="date" class="swal2-input" value="${new Date().toISOString().slice(0, 10)}" required>
       `,
       focusConfirm: false,
@@ -110,9 +119,8 @@ export default function ClienteDetallePage() {
       cancelButtonText: "Cancelar",
       preConfirm: () => {
         const monto = parseFloat((document.getElementById("monto") as HTMLInputElement).value);
-        const concepto = (document.getElementById("concepto") as HTMLInputElement).value;
+        const concepto = (document.getElementById("concepto") as HTMLInputElement | HTMLSelectElement).value;
         const fecha = (document.getElementById("fecha") as HTMLInputElement).value;
-        
         if (!monto || !concepto || !fecha) {
           Swal.showValidationMessage("Completa los campos obligatorios");
           return false;
@@ -130,9 +138,8 @@ export default function ClienteDetallePage() {
         fecha: formValues.fecha,
         pagado: true
       });
-      
       if (ok) {
-        Swal.fire({ icon: "success", title: "¡Pago registrado!", timer: 1500, showConfirmButton: false });
+        Swal.fire({ icon: "success", title: "¡Salida registrada!", timer: 1500, showConfirmButton: false });
       }
     }
   };
