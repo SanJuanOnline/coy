@@ -5,10 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCrmData } from "@/lib/useCrmData";
 import { getSaldoCliente } from "@/lib/types";
-import { Paper, Typography, Box, Button, IconButton, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Checkbox, FormControlLabel } from "@mui/material";
+import { Paper, Typography, Box, Button, IconButton, Chip, Checkbox, FormControlLabel, Collapse } from "@mui/material";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import SendIcon from "@mui/icons-material/Send";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import Swal from "sweetalert2";
 import PageWrapper from "@/components/PageWrapper";
 
@@ -27,6 +29,7 @@ export default function ClienteDetallePage() {
   
   const [enviarWhatsApp, setEnviarWhatsApp] = useState(false);
   const [enviarEmail, setEnviarEmail] = useState(false);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   
   const clienteId = params.id as string;
 
@@ -197,16 +200,6 @@ export default function ClienteDetallePage() {
     }
   };
 
-  const getTipoColor = (tipo: string) => {
-    const colores: Record<string, string> = {
-      credito: "#3b82f6",
-      prestamo: "#8b5cf6",
-      pago: "#10b981",
-      interes: "#f59e0b",
-      otro: "#6b7280"
-    };
-    return colores[tipo] || "#6b7280";
-  };
 
   return (
     <PageWrapper>
@@ -313,9 +306,9 @@ export default function ClienteDetallePage() {
           </Button>
         </Box>
 
-        {/* Tabla de movimientos */}
+        {/* Movimientos en acordeón */}
         <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: "#0f172a" }}>
-          📋 Detalle de Movimientos ({cliente.movimientos.length})
+          📋 Movimientos ({cliente.movimientos.length})
         </Typography>
 
         {cliente.movimientos.length === 0 ? (
@@ -324,55 +317,77 @@ export default function ClienteDetallePage() {
             <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
               <Button variant="contained" startIcon={<AttachMoneyIcon />} onClick={handleNuevoIngreso}
                 sx={{ background: "linear-gradient(135deg, #8b5cf6, #6d28d9)", textTransform: "none" }}>
-                Nuevo Ingreso
+                Nueva Entrada
               </Button>
               <Button variant="contained" startIcon={<AttachMoneyIcon />} onClick={handleNuevoPago}
                 sx={{ background: "linear-gradient(135deg, #059669, #10b981)", textTransform: "none" }}>
-                Registrar Pago
+                Registrar Salida
               </Button>
             </Box>
           </Paper>
-        ) : (
-          <TableContainer component={Paper} elevation={0} sx={{ borderRadius: 3, border: "2px solid #e9d5ff", background: "rgba(255,255,255,0.9)" }}>
-            <Table>
-              <TableHead>
-                <TableRow sx={{ bgcolor: "#f8fafc" }}>
-                  <TableCell sx={{ fontWeight: 700 }}>Tipo</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Concepto</TableCell>
-                  <TableCell sx={{ fontWeight: 700, display: { xs: "none", sm: "table-cell" } }}>Fecha</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Monto</TableCell>
-                  <TableCell sx={{ fontWeight: 700, display: { xs: "none", md: "table-cell" } }}>Interés</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Estado</TableCell>
-                  <TableCell></TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {cliente.movimientos.map((mov) => (
-                  <TableRow key={mov.id} hover>
-                    <TableCell>
-                      <Chip label={mov.tipo} size="small" sx={{ fontSize: "0.75rem", fontWeight: 600, bgcolor: getTipoColor(mov.tipo) + "20", color: getTipoColor(mov.tipo) }} />
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 500 }}>{mov.concepto}</TableCell>
-                    <TableCell sx={{ color: "#64748b", display: { xs: "none", sm: "table-cell" } }}>{fmtFecha(mov.fecha)}</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>{fmt(mov.monto)}</TableCell>
-                    <TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>{mov.interes ? `${mov.interes}%` : "—"}</TableCell>
-                    <TableCell>
-                      <Chip label={mov.pagado ? "Pagado" : "Pendiente"} size="small" 
-                        color={mov.pagado ? "success" : "warning"}
-                        onClick={() => togglePagado(mov.id)}
-                        sx={{ cursor: "pointer", fontSize: "0.75rem", fontWeight: 600 }} />
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton size="small" onClick={() => deleteMovimiento(mov.id)} sx={{ color: "#94a3b8", "&:hover": { color: "#dc2626" } }}>
+        ) : (() => {
+          const entradas = cliente.movimientos.filter(m => m.tipo === "prestamo");
+          const salidas = cliente.movimientos.filter(m => m.tipo === "pago");
+          const entradasConceptos = new Set(entradas.map(e => e.concepto));
+          const salidasHuerfanas = salidas.filter(s => !entradasConceptos.has(s.concepto));
+
+          return (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              {entradas.map(entrada => {
+                const egresosRelacionados = salidas.filter(s => s.concepto === entrada.concepto);
+                const isOpen = expanded[entrada.id] ?? false;
+                return (
+                  <Paper key={entrada.id} elevation={0} sx={{ borderRadius: 2, border: "2px solid #e9d5ff", overflow: "hidden" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", p: 2, gap: 1.5, flexWrap: "wrap", background: "rgba(139,92,246,0.06)", cursor: egresosRelacionados.length > 0 ? "pointer" : "default" }}
+                      onClick={() => egresosRelacionados.length > 0 && setExpanded(prev => ({ ...prev, [entrada.id]: !isOpen }))}>
+                      <Chip label="ENTRADA" size="small" sx={{ fontWeight: 700, bgcolor: "#ede9fe", color: "#7c3aed", fontSize: "0.7rem" }} />
+                      <Typography sx={{ fontWeight: 700, flex: 1, fontSize: "0.95rem" }}>{entrada.concepto}</Typography>
+                      <Typography sx={{ fontWeight: 700, color: "#7c3aed" }}>{fmt(entrada.monto)}</Typography>
+                      <Typography sx={{ fontSize: "0.8rem", color: "#64748b", display: { xs: "none", sm: "block" } }}>{fmtFecha(entrada.fecha)}</Typography>
+                      {entrada.interes && <Chip label={`${entrada.interes}%`} size="small" sx={{ bgcolor: "#fef3c7", color: "#b45309", fontSize: "0.7rem" }} />}
+                      <Chip label={entrada.pagado ? "Pagado" : "Pendiente"} size="small" color={entrada.pagado ? "success" : "warning"}
+                        onClick={(e) => { e.stopPropagation(); togglePagado(entrada.id); }} sx={{ cursor: "pointer", fontSize: "0.7rem" }} />
+                      <IconButton size="small" onClick={(e) => { e.stopPropagation(); deleteMovimiento(entrada.id); }} sx={{ color: "#94a3b8", "&:hover": { color: "#dc2626" } }}>
                         <DeleteOutlineIcon fontSize="small" />
                       </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
+                      {egresosRelacionados.length > 0 && (isOpen ? <ExpandLessIcon sx={{ color: "#7c3aed" }} /> : <ExpandMoreIcon sx={{ color: "#7c3aed" }} />)}
+                    </Box>
+                    {egresosRelacionados.length > 0 && (
+                      <Collapse in={isOpen}>
+                        <Box sx={{ borderTop: "1px solid #e9d5ff" }}>
+                          {egresosRelacionados.map(salida => (
+                            <Box key={salida.id} sx={{ display: "flex", alignItems: "center", p: 1.5, pl: 4, gap: 1.5, flexWrap: "wrap", background: "rgba(16,185,129,0.04)", borderBottom: "1px solid #f0fdf4" }}>
+                              <Chip label="SALIDA" size="small" sx={{ fontWeight: 700, bgcolor: "#d1fae5", color: "#059669", fontSize: "0.7rem" }} />
+                              <Typography sx={{ flex: 1, fontSize: "0.875rem" }}>{salida.concepto}</Typography>
+                              <Typography sx={{ fontWeight: 700, color: "#059669" }}>{fmt(salida.monto)}</Typography>
+                              <Typography sx={{ fontSize: "0.8rem", color: "#64748b", display: { xs: "none", sm: "block" } }}>{fmtFecha(salida.fecha)}</Typography>
+                              <IconButton size="small" onClick={() => deleteMovimiento(salida.id)} sx={{ color: "#94a3b8", "&:hover": { color: "#dc2626" } }}>
+                                <DeleteOutlineIcon fontSize="small" />
+                              </IconButton>
+                            </Box>
+                          ))}
+                        </Box>
+                      </Collapse>
+                    )}
+                  </Paper>
+                );
+              })}
+              {salidasHuerfanas.map(salida => (
+                <Paper key={salida.id} elevation={0} sx={{ borderRadius: 2, border: "2px solid #d1fae5", overflow: "hidden" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", p: 2, gap: 1.5, flexWrap: "wrap", background: "rgba(16,185,129,0.06)" }}>
+                    <Chip label="SALIDA" size="small" sx={{ fontWeight: 700, bgcolor: "#d1fae5", color: "#059669", fontSize: "0.7rem" }} />
+                    <Typography sx={{ fontWeight: 700, flex: 1, fontSize: "0.95rem" }}>{salida.concepto}</Typography>
+                    <Typography sx={{ fontWeight: 700, color: "#059669" }}>{fmt(salida.monto)}</Typography>
+                    <Typography sx={{ fontSize: "0.8rem", color: "#64748b", display: { xs: "none", sm: "block" } }}>{fmtFecha(salida.fecha)}</Typography>
+                    <IconButton size="small" onClick={() => deleteMovimiento(salida.id)} sx={{ color: "#94a3b8", "&:hover": { color: "#dc2626" } }}>
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </Paper>
+              ))}
+            </Box>
+          );
+        })()}
       </Box>
     </PageWrapper>
   );
