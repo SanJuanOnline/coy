@@ -4,29 +4,29 @@
 
 :root {
   --bg: #fafafa;
-  --bg-gradient: linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(168, 85, 247, 0.08), rgba(59, 130, 246, 0.08));
+  --bg-gradient: linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(168, 85, 247, 0.15), rgba(59, 130, 246, 0.15));
   --text: #0f172a;
   --text-secondary: #64748b;
   --border-neon: rgba(236, 72, 153, 0.4);
   --accent-pink: #ec4899;
   --accent-purple: #a855f7;
   --accent-blue: #3b82f6;
-  --card-bg: rgba(255, 255, 255, 0.85);
+  --card-bg: rgba(255, 255, 255, 0.9);
   --input-bg: rgba(255, 255, 255, 0.95);
   --header-gradient: linear-gradient(135deg, #ec4899, #a855f7, #3b82f6);
 }
 
 [data-theme="dark"] {
-  --bg: #000000;
-  --bg-gradient: linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(168, 85, 247, 0.08), rgba(59, 130, 246, 0.08));
+  --bg: #0a0a0a;
+  --bg-gradient: linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(168, 85, 247, 0.15), rgba(59, 130, 246, 0.15));
   --text: #ffffff;
   --text-secondary: #cbd5e1;
   --border-neon: rgba(236, 72, 153, 0.6);
   --accent-pink: #ec4899;
   --accent-purple: #a855f7;
   --accent-blue: #60a5fa;
-  --card-bg: rgba(26, 26, 26, 0.85);
-  --input-bg: rgba(20, 20, 20, 0.9);
+  --card-bg: rgba(26, 26, 26, 0.9);
+  --input-bg: rgba(20, 20, 20, 0.95);
   --header-gradient: linear-gradient(135deg, #ec4899, #a855f7, #3b82f6);
 }
 
@@ -34,16 +34,18 @@ body {
   background: var(--bg);
   background-image: var(--bg-gradient);
   background-attachment: fixed;
+  background-size: cover;
   color: var(--text);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
-  transition: all 0.3s;
+  -moz-osx-font-smoothing: grayscale;
+  transition: all 0.3s ease;
   min-height: 100vh;
 }
 
 [data-theme="dark"] body {
-  background: #000000 !important;
-  background-image: var(--bg-gradient) !important;
+  background: #0a0a0a;
+  background-image: var(--bg-gradient);
 }
 
 [data-theme="dark"] .MuiBox-root {
@@ -172,6 +174,10 @@ body {
   .icon-btn[aria-label="Menú"] {
     display: none !important;
   }
+  
+  .md\:\!hidden {
+    display: none !important;
+  }
 }
 
 .notification-badge {
@@ -281,7 +287,8 @@ body {
 /* MUI Components */
 .MuiInputBase-input { 
   color: var(--text) !important; 
-  background: var(--input-bg) !important; 
+  background: var(--input-bg) !important;
+  font-weight: 500 !important;
 }
 
 .MuiInputBase-root { 
@@ -291,7 +298,8 @@ body {
 
 .MuiInputLabel-root { 
   color: var(--accent-pink) !important; 
-  font-weight: 600 !important; 
+  font-weight: 600 !important;
+  letter-spacing: 0.01em !important;
 }
 
 .MuiOutlinedInput-notchedOutline { 
@@ -316,7 +324,8 @@ body {
 
 .MuiTableCell-root { 
   color: var(--text) !important; 
-  background: transparent !important; 
+  background: transparent !important;
+  font-weight: 500 !important;
 }
 
 .MuiPaper-root { 
@@ -331,6 +340,9 @@ body {
   background: transparent !important; 
   border-bottom: 2px solid var(--border-neon) !important;
   font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: uppercase !important;
+  font-size: 0.8125rem !important;
 }
 
 .MuiTableCell-root {
@@ -340,12 +352,14 @@ body {
 .MuiChip-root {
   border: 2px solid var(--border-neon) !important;
   font-weight: 600 !important;
+  letter-spacing: 0.01em !important;
 }
 
 .MuiButton-root {
   border-radius: 10px !important;
   font-weight: 700 !important;
   text-transform: none !important;
+  letter-spacing: 0.01em !important;
 }
 
 [data-theme="dark"] .MuiTypography-root {

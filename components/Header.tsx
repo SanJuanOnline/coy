@@ -119,8 +119,7 @@ export default function Header() {
           {/* Menú móvil - Solo visible en móvil */}
           <button 
             onClick={() => setOpen(!open)} 
-            className="icon-btn"
-            style={{ display: 'flex' }}
+            className="icon-btn md:!hidden"
             aria-label="Menú"
           >
             {open ? <X style={{ width: 20, height: 20 }} /> : <Menu style={{ width: 20, height: 20 }} />}
