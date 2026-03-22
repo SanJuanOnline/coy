@@ -1,15 +1,28 @@
+"use client";
+
+import { useTheme } from "@/lib/ThemeContext";
+
 export default function Footer() {
+  const { theme } = useTheme();
+  
   return (
-    <footer style={{ borderTop: "2px solid rgba(219,39,119,0.2)", background: "linear-gradient(135deg, rgba(252,231,243,0.6) 0%, rgba(237,233,254,0.6) 100%)", backdropFilter: "blur(12px)", padding: "1.25rem", textAlign: "center" }}>
-      <p style={{ fontSize: "0.8125rem", fontWeight: 600, margin: 0, marginBottom: "0.5rem" }}>
-        <span style={{ background: "linear-gradient(135deg, #db2777, #7c3aed)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: 700 }}>CRM Coy</span>
-        <span style={{ color: "#64748b", fontWeight: 500 }}> — Gestión financiera personal</span>
+    <footer style={{ 
+      borderTop: "2px solid rgba(236, 72, 153, 0.6)", 
+      background: "linear-gradient(135deg, #ec4899, #a855f7, #3b82f6)", 
+      padding: "1.25rem", 
+      textAlign: "center",
+      boxShadow: "0 -4px 20px rgba(236, 72, 153, 0.3)"
+    }}>
+      <p style={{ fontSize: "0.8125rem", fontWeight: 600, margin: 0, marginBottom: "0.5rem", color: "#ffffff" }}>
+        <span style={{ fontWeight: 900, textShadow: "0 2px 10px rgba(0, 0, 0, 0.3)" }}>CRM Coy</span>
+        <span style={{ fontWeight: 500, opacity: 0.9 }}> — Gestión financiera personal</span>
       </p>
-      <p style={{ fontSize: "0.75rem", margin: 0 }}>
-        <span style={{ color: "#64748b" }}>© Creado por </span>
+      <p style={{ fontSize: "0.75rem", margin: 0, color: "rgba(255, 255, 255, 0.9)" }}>
+        <span>© Creado por </span>
         <a href="https://enriquevargas.vercel.app" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", fontWeight: 700 }}>
-          <span style={{ color: "#3b82f6" }}>Enrique</span>
-          <span style={{ color: "#eab308" }}> Vargas</span>
+          <span style={{ color: "#fbbf24", textShadow: "0 0 10px rgba(251, 191, 36, 0.8)" }}>Enrique</span>
+          {" "}
+          <span style={{ color: "#3b82f6", textShadow: "0 0 10px rgba(59, 130, 246, 0.8)" }}>Vargas</span>
         </a>
       </p>
     </footer>

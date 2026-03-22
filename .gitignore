@@ -43,5 +43,11 @@ next-env.d.ts
 # Almacenamiento local de datos CRM
 data.json
 
+# PIN de usuario
+user-pin.json
+
+# Configuración de email
+email-config.json
+
 # Documentación interna (no subir a repositorio público)
 /manual

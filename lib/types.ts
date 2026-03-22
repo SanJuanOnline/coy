@@ -1,32 +1,54 @@
-export const SALDO_INICIAL = 35000;
 export const MAX_REGISTROS = 3000;
 
-export interface Ingreso {
+export interface Cliente {
   id: string;
   nombre: string;
-  monto: number;
-  concepto: string;
-  fecha: string;
-  createdAt: number;
+  telefono: string;
+  email: string;
+  notas: string;
+  frecuenciaPago?: "semanal" | "quincenal" | "mensual" | "otro";
+  cantidadPagos?: number;
+  createdAt: string;
 }
 
-export interface Egreso {
+export interface Movimiento {
   id: string;
+  clienteId: string;
+  tipo: "credito" | "prestamo" | "pago" | "interes" | "otro";
   concepto: string;
   monto: number;
   fecha: string;
-  comentarios: string;
-  createdAt: number;
+  interes?: number; // Porcentaje de interés si aplica
+  pagado: boolean;
+  createdAt: string;
 }
 
 export interface CrmData {
-  saldoInicial: number;
-  ingresos: Ingreso[];
-  egresos: Egreso[];
+  clientes: Cliente[];
+  movimientos: Movimiento[];
 }
 
-export function getSaldoActual(data: CrmData): number {
-  const totalIngresos = data.ingresos.reduce((s, i) => s + i.monto, 0);
-  const totalEgresos = data.egresos.reduce((s, e) => s + e.monto, 0);
-  return data.saldoInicial + totalIngresos - totalEgresos;
+export function getSaldoCliente(clienteId: string, movimientos: Movimiento[]): {
+  totalPrestado: number;
+  totalPagado: number;
+  totalInteres: number;
+  pendiente: number;
+} {
+  const movs = movimientos.filter(m => m.clienteId === clienteId);
+  
+  const totalPrestado = movs
+    .filter(m => m.tipo === "credito" || m.tipo === "prestamo")
+    .reduce((sum, m) => sum + m.monto, 0);
+  
+  const totalPagado = movs
+    .filter(m => m.tipo === "pago" && m.pagado)
+    .reduce((sum, m) => sum + m.monto, 0);
+  
+  const totalInteres = movs
+    .filter(m => m.tipo === "interes")
+    .reduce((sum, m) => sum + m.monto, 0);
+  
+  const pendiente = totalPrestado + totalInteres - totalPagado;
+  
+  return { totalPrestado, totalPagado, totalInteres, pendiente };
 }

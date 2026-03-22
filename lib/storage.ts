@@ -1,7 +1,6 @@
 import fs from "fs";
 import path from "path";
 import type { CrmData } from "./types";
-import { SALDO_INICIAL } from "./types";
 
 const FILE = path.join(process.cwd(), "data.json");
 
@@ -10,12 +9,11 @@ export function readData(): CrmData {
     const raw = fs.readFileSync(FILE, "utf-8");
     const d = JSON.parse(raw) as CrmData;
     return {
-      saldoInicial: d.saldoInicial ?? SALDO_INICIAL,
-      ingresos: Array.isArray(d.ingresos) ? d.ingresos : [],
-      egresos: Array.isArray(d.egresos) ? d.egresos : [],
+      clientes: Array.isArray(d.clientes) ? d.clientes : [],
+      movimientos: Array.isArray(d.movimientos) ? d.movimientos : [],
     };
   } catch {
-    return { saldoInicial: SALDO_INICIAL, ingresos: [], egresos: [] };
+    return { clientes: [], movimientos: [] };
   }
 }
 
