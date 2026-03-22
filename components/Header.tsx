@@ -22,9 +22,7 @@ export default function Header() {
   const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
-    fetch("/api/auth")
-      .then(res => res.json())
-      .then(data => { if (data.username) setUsername(data.username); });
+    setUsername(sessionStorage.getItem("username") || "");
   }, []);
 
   const handleCerrarSesion = () => {
@@ -48,7 +46,7 @@ export default function Header() {
       await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "delete" })
+        body: JSON.stringify({ action: "delete", username })
       });
       await fetch("/api/data", {
         method: "POST",

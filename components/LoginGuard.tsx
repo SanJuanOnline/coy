@@ -63,6 +63,7 @@ export default function LoginGuard({ children }: LoginGuardProps) {
       if (data.ok) {
         await Swal.fire({ icon: "success", title: "¡Usuario creado!", timer: 2000, showConfirmButton: false });
         sessionStorage.setItem("authenticated", "true");
+        sessionStorage.setItem("username", username);
         setIsAuthenticated(true);
       } else {
         Swal.fire({ icon: "error", title: "Error", text: data.error });
@@ -89,6 +90,7 @@ export default function LoginGuard({ children }: LoginGuardProps) {
       const data = await res.json();
       if (data.ok) {
         sessionStorage.setItem("authenticated", "true");
+        sessionStorage.setItem("username", username);
         setIsAuthenticated(true);
       } else {
         Swal.fire({ icon: "error", title: "Error", text: data.error });
