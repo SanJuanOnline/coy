@@ -52,5 +52,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, username: credentials.username, password: credentials.password });
   }
 
+  if (action === "delete") {
+    await kv.del(KEY);
+    return NextResponse.json({ ok: true });
+  }
+
   return NextResponse.json({ ok: false, error: "Acción no válida" }, { status: 400 });
 }

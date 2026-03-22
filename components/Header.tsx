@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, Wallet, Menu, X, UserCircle, Bell, Moon, Sun } from "lucide-react";
+import { Users, Wallet, Menu, X, UserCircle, Bell, Moon, Sun, LogOut, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { db } from "@/lib/db";
 import Swal from "sweetalert2";
 import { useTheme } from "@/lib/ThemeContext";
 
 const nav = [
-  { href: "/",          label: "Inicio",    Icon: Wallet },
-  { href: "/clientes",  label: "Clientes",  Icon: Users },
+  { href: "/",         label: "Inicio",   Icon: Wallet },
+  { href: "/clientes", label: "Clientes", Icon: Users },
 ];
 
 export default function Header() {
@@ -24,10 +24,45 @@ export default function Header() {
   useEffect(() => {
     fetch("/api/auth")
       .then(res => res.json())
-      .then(data => {
-        if (data.username) setUsername(data.username);
-      });
+      .then(data => { if (data.username) setUsername(data.username); });
   }, []);
+
+  const handleCerrarSesion = () => {
+    sessionStorage.removeItem("authenticated");
+    window.location.reload();
+  };
+
+  const handleEliminarCuenta = async () => {
+    const result = await Swal.fire({
+      title: "⚠️ ¿Eliminar cuenta?",
+      text: "Se eliminará el usuario y todos los datos. No se puede deshacer.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#64748b"
+    });
+    if (!result.isConfirmed) return;
+    try {
+      await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete" })
+      });
+      await fetch("/api/data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "resetAll" })
+      });
+      await db.clientes.clear();
+      await db.movimientos.clear();
+      sessionStorage.removeItem("authenticated");
+      window.location.reload();
+    } catch {
+      Swal.fire({ icon: "error", title: "Error", text: "No se pudo eliminar la cuenta" });
+    }
+  };
 
   const handleBorrarTodo = async () => {
     const result = await Swal.fire({
@@ -40,26 +75,14 @@ export default function Header() {
       confirmButtonColor: "#dc2626",
       cancelButtonColor: "#64748b"
     });
-
     if (result.isConfirmed) {
       try {
         await db.clientes.clear();
         await db.movimientos.clear();
-
-        await Swal.fire({
-          icon: "success",
-          title: "Datos eliminados",
-          text: "Todos los registros han sido borrados",
-          timer: 2000,
-          showConfirmButton: false
-        });
+        await Swal.fire({ icon: "success", title: "Datos eliminados", timer: 2000, showConfirmButton: false });
         window.location.href = "/clientes";
-      } catch (error) {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "No se pudo borrar los datos"
-        });
+      } catch {
+        Swal.fire({ icon: "error", title: "Error", text: "No se pudo borrar los datos" });
       }
     }
   };
@@ -91,7 +114,6 @@ export default function Header() {
             <button onClick={() => setNotificaciones(!notificaciones)} className="icon-btn">
               <Bell style={{ width: 18, height: 18 }} />
             </button>
-
             {notificaciones && (
               <div className="dropdown-menu" style={{ minWidth: "280px" }}>
                 <div style={{ padding: "0.75rem 1rem", borderBottom: "1px solid var(--border)", fontWeight: 700, fontSize: "0.875rem" }}>
@@ -115,22 +137,23 @@ export default function Header() {
               <UserCircle style={{ width: 20, height: 20 }} />
               <span>{username || "Cuenta"}</span>
             </button>
-
             {menuCuenta && (
               <div className="dropdown-menu">
                 <button onClick={() => { setMenuCuenta(false); handleBorrarTodo(); }} className="dropdown-item danger">
                   🗑️ Borrar todos los datos
                 </button>
+                <button onClick={() => { setMenuCuenta(false); handleCerrarSesion(); }} className="dropdown-item">
+                  <LogOut style={{ width: 15, height: 15 }} /> Cerrar sesión
+                </button>
+                <button onClick={() => { setMenuCuenta(false); handleEliminarCuenta(); }} className="dropdown-item danger">
+                  <Trash2 style={{ width: 15, height: 15 }} /> Eliminar cuenta
+                </button>
               </div>
             )}
           </div>
 
-          {/* Menú móvil - Solo visible en móvil */}
-          <button 
-            onClick={() => setOpen(!open)} 
-            className="icon-btn md:!hidden"
-            aria-label="Menú"
-          >
+          {/* Menú móvil */}
+          <button onClick={() => setOpen(!open)} className="icon-btn md:!hidden" aria-label="Menú">
             {open ? <X style={{ width: 20, height: 20 }} /> : <Menu style={{ width: 20, height: 20 }} />}
           </button>
         </div>
@@ -138,6 +161,13 @@ export default function Header() {
 
       {open && (
         <div className="mobile-menu">
+          {/* Usuario en móvil */}
+          {username && (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.5rem 0.75rem", fontSize: "0.875rem", fontWeight: 700, color: "var(--text-primary)", borderBottom: "1px solid var(--border)", marginBottom: "0.5rem" }}>
+              <UserCircle style={{ width: 18, height: 18 }} />
+              {username}
+            </div>
+          )}
           {nav.map(({ href, label, Icon }) => {
             const active = pathname === href;
             return (
@@ -154,10 +184,15 @@ export default function Header() {
             <button onClick={() => { setOpen(false); handleBorrarTodo(); }} className="nav-link danger" style={{ width: "100%", justifyContent: "flex-start", color: "#dc2626" }}>
               🗑️ Borrar datos
             </button>
+            <button onClick={() => { setOpen(false); handleCerrarSesion(); }} className="nav-link" style={{ width: "100%", justifyContent: "flex-start" }}>
+              <LogOut style={{ width: 16, height: 16 }} /> Cerrar sesión
+            </button>
+            <button onClick={() => { setOpen(false); handleEliminarCuenta(); }} className="nav-link" style={{ width: "100%", justifyContent: "flex-start", color: "#dc2626" }}>
+              <Trash2 style={{ width: 16, height: 16 }} /> Eliminar cuenta
+            </button>
           </div>
         </div>
       )}
     </header>
   );
 }
-

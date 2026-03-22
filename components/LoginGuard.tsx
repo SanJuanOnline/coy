@@ -30,7 +30,6 @@ export default function LoginGuard({ children }: LoginGuardProps) {
       setIsAuthenticated(true);
       return;
     }
-
     fetch("/api/auth")
       .then(res => res.json())
       .then(data => {
@@ -41,72 +40,53 @@ export default function LoginGuard({ children }: LoginGuardProps) {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (username.length < 3) {
       Swal.fire({ icon: "error", title: "Error", text: "El usuario debe tener al menos 3 caracteres" });
       return;
     }
-
     if (password.length < 4) {
       Swal.fire({ icon: "error", title: "Error", text: "La contraseña debe tener al menos 4 caracteres" });
       return;
     }
-
     if (password !== confirmPassword) {
       Swal.fire({ icon: "error", title: "Error", text: "Las contraseñas no coinciden" });
       return;
     }
-
     setLoading(true);
-
     try {
       const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "create", username, password })
       });
-
       const data = await res.json();
-
       if (data.ok) {
-        await Swal.fire({ 
-          icon: "success", 
-          title: "¡Usuario creado!", 
-          text: "Tu cuenta ha sido configurada correctamente",
-          timer: 2000,
-          showConfirmButton: false
-        });
+        await Swal.fire({ icon: "success", title: "¡Usuario creado!", timer: 2000, showConfirmButton: false });
         sessionStorage.setItem("authenticated", "true");
         setIsAuthenticated(true);
       } else {
         Swal.fire({ icon: "error", title: "Error", text: data.error });
       }
-    } catch (error) {
+    } catch {
       Swal.fire({ icon: "error", title: "Error", text: "No se pudo crear el usuario" });
     }
-
     setLoading(false);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!username || !password) {
       Swal.fire({ icon: "error", title: "Error", text: "Completa todos los campos" });
       return;
     }
-
     setLoading(true);
-
     try {
       const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "verify", username, password })
       });
-
       const data = await res.json();
-
       if (data.ok) {
         sessionStorage.setItem("authenticated", "true");
         setIsAuthenticated(true);
@@ -114,10 +94,9 @@ export default function LoginGuard({ children }: LoginGuardProps) {
         Swal.fire({ icon: "error", title: "Error", text: data.error });
         setPassword("");
       }
-    } catch (error) {
+    } catch {
       Swal.fire({ icon: "error", title: "Error", text: "No se pudo verificar las credenciales" });
     }
-
     setLoading(false);
   };
 
@@ -126,26 +105,18 @@ export default function LoginGuard({ children }: LoginGuardProps) {
     try {
       const res = await fetch("/api/recover", { method: "POST" });
       const data = await res.json();
-
       if (data.ok) {
-        await Swal.fire({ 
-          icon: "success", 
-          title: "¡Correo enviado!", 
-          text: "Revisa tu bandeja de entrada",
-          timer: 3000
-        });
+        await Swal.fire({ icon: "success", title: "¡Correo enviado!", text: "Revisa tu bandeja de entrada", timer: 3000 });
       } else {
         Swal.fire({ icon: "error", title: "Error", text: "No se pudo enviar el correo" });
       }
-    } catch (error) {
+    } catch {
       Swal.fire({ icon: "error", title: "Error", text: "Error al recuperar credenciales" });
     }
     setRecovering(false);
   };
 
-  if (isAuthenticated) {
-    return <>{children}</>;
-  }
+  if (isAuthenticated) return <>{children}</>;
 
   if (hasUser === null) {
     return (
@@ -156,30 +127,30 @@ export default function LoginGuard({ children }: LoginGuardProps) {
   }
 
   return (
-    <Box sx={{ 
-      minHeight: "100vh", 
-      display: "flex", 
-      alignItems: "center", 
+    <Box sx={{
+      minHeight: "100vh",
+      display: "flex",
+      alignItems: "center",
       justifyContent: "center",
       background: "linear-gradient(135deg, #fdf2f8 0%, #faf5ff 50%, #f5f3ff 100%)",
       padding: "2rem"
     }}>
-      <Paper elevation={0} sx={{ 
-        p: 4, 
-        borderRadius: 3, 
-        border: "2px solid #e9d5ff", 
+      <Paper elevation={0} sx={{
+        p: 4,
+        borderRadius: 3,
+        border: "2px solid #e9d5ff",
         background: "rgba(255,255,255,0.95)",
         maxWidth: 400,
         width: "100%",
         textAlign: "center"
       }}>
         <Box sx={{ mb: 3 }}>
-          <Box sx={{ 
-            display: "inline-flex", 
-            alignItems: "center", 
-            justifyContent: "center", 
-            width: 80, 
-            height: 80, 
+          <Box sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 80,
+            height: 80,
             borderRadius: "50%",
             background: isCreating ? "linear-gradient(135deg, #059669, #10b981)" : "linear-gradient(135deg, #3b82f6, #1d4ed8)",
             boxShadow: isCreating ? "0 8px 24px rgba(5,150,105,0.3)" : "0 8px 24px rgba(59,130,246,0.3)",
@@ -187,9 +158,7 @@ export default function LoginGuard({ children }: LoginGuardProps) {
           }}>
             {isCreating ? <PersonAddIcon sx={{ fontSize: 40, color: "#fff" }} /> : <LockIcon sx={{ fontSize: 40, color: "#fff" }} />}
           </Box>
-          <Typography variant="h4" sx={{ fontWeight: 900, color: "#0f172a", mb: 1 }}>
-            CRM Coy
-          </Typography>
+          <Typography variant="h4" sx={{ fontWeight: 900, color: "#0f172a", mb: 1 }}>CRM Coy</Typography>
           <Typography sx={{ fontSize: "0.9rem", color: "#64748b" }}>
             {isCreating ? "Crea tu cuenta" : "Iniciar sesión"}
           </Typography>
@@ -197,119 +166,76 @@ export default function LoginGuard({ children }: LoginGuardProps) {
 
         {isCreating ? (
           <Box component="form" onSubmit={handleCreateUser} sx={{ display: "grid", gap: 2.5 }}>
-            <TextField
-              label="Usuario"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              fullWidth
-              required
-              autoFocus
-            />
-
+            <TextField label="Usuario" value={username} onChange={(e) => setUsername(e.target.value)} fullWidth required autoFocus />
             <TextField
               label="Contraseña"
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              fullWidth
-              required
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setShowPassword(p => !p)} edge="end">
-                      {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                    </IconButton>
-                  </InputAdornment>
-                )
-              }}
+              fullWidth required
+              InputProps={{ endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowPassword(p => !p)} edge="end">
+                    {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                  </IconButton>
+                </InputAdornment>
+              )}}
             />
-
             <TextField
               label="Confirmar contraseña"
               type={showConfirm ? "text" : "password"}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              fullWidth
-              required
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setShowConfirm(p => !p)} edge="end">
-                      {showConfirm ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                    </IconButton>
-                  </InputAdornment>
-                )
-              }}
+              fullWidth required
+              InputProps={{ endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowConfirm(p => !p)} edge="end">
+                    {showConfirm ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                  </IconButton>
+                </InputAdornment>
+              )}}
             />
-
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={loading}
-              sx={{
-                background: "linear-gradient(135deg, #059669, #10b981)",
-                fontWeight: 700,
-                py: 1.5,
-                fontSize: "1rem",
-                textTransform: "none",
-                boxShadow: "0 4px 12px rgba(5,150,105,0.3)"
-              }}>
+            <Button type="submit" variant="contained" disabled={loading} sx={{
+              background: "linear-gradient(135deg, #059669, #10b981)",
+              fontWeight: 700, py: 1.5, fontSize: "1rem", textTransform: "none",
+              boxShadow: "0 4px 12px rgba(5,150,105,0.3)"
+            }}>
               {loading ? "Creando..." : "Crear cuenta"}
             </Button>
+            {hasUser && (
+              <Button onClick={() => setIsCreating(false)} sx={{ color: "#6b7280", fontSize: "0.875rem", textTransform: "none" }}>
+                ¿Ya tienes cuenta? Ingresar
+              </Button>
+            )}
           </Box>
         ) : (
           <Box component="form" onSubmit={handleLogin} sx={{ display: "grid", gap: 2.5 }}>
-            <TextField
-              label="Usuario"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              fullWidth
-              required
-              autoFocus
-            />
-
+            <TextField label="Usuario" value={username} onChange={(e) => setUsername(e.target.value)} fullWidth required autoFocus />
             <TextField
               label="Contraseña"
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              fullWidth
-              required
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setShowPassword(p => !p)} edge="end">
-                      {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                    </IconButton>
-                  </InputAdornment>
-                )
-              }}
+              fullWidth required
+              InputProps={{ endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowPassword(p => !p)} edge="end">
+                    {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                  </IconButton>
+                </InputAdornment>
+              )}}
             />
-
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={loading}
-              sx={{
-                background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
-                fontWeight: 700,
-                py: 1.5,
-                fontSize: "1rem",
-                textTransform: "none",
-                boxShadow: "0 4px 12px rgba(59,130,246,0.3)"
-              }}>
+            <Button type="submit" variant="contained" disabled={loading} sx={{
+              background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+              fontWeight: 700, py: 1.5, fontSize: "1rem", textTransform: "none",
+              boxShadow: "0 4px 12px rgba(59,130,246,0.3)"
+            }}>
               {loading ? "Verificando..." : "Ingresar"}
             </Button>
-
-            <Button
-              onClick={handleRecover}
-              disabled={recovering}
-              sx={{
-                color: "#6b7280",
-                fontSize: "0.875rem",
-                textTransform: "none",
-                "&:hover": { color: "#3b82f6" }
-              }}>
+            <Button onClick={() => setIsCreating(true)} sx={{ color: "#6b7280", fontSize: "0.875rem", textTransform: "none" }}>
+              Crear cuenta nueva
+            </Button>
+            <Button onClick={handleRecover} disabled={recovering} sx={{ color: "#6b7280", fontSize: "0.875rem", textTransform: "none" }}>
               {recovering ? "Enviando..." : "¿Olvidaste tu contraseña?"}
             </Button>
           </Box>
