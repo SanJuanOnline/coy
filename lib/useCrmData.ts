@@ -1,12 +1,20 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { db } from "./db";
-import type { CrmData, Cliente, Movimiento } from "./types";
+import type { Cliente, Movimiento } from "./types";
 
-// Generar ID único compatible con navegador
-function generateId() {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+interface CrmData {
+  clientes: Cliente[];
+  movimientos: Movimiento[];
+}
+
+async function api(action: string, payload?: object) {
+  const res = await fetch("/api/data", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action, payload }),
+  });
+  return res.json();
 }
 
 export function useCrmData() {
@@ -14,11 +22,9 @@ export function useCrmData() {
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    console.log('🔄 Refrescando datos...');
-    const clientes = await db.clientes.toArray();
-    const movimientos = await db.movimientos.toArray();
-    console.log('📊 Clientes:', clientes.length, 'Movimientos:', movimientos.length);
-    setData({ clientes, movimientos });
+    const res = await fetch("/api/data");
+    const d = await res.json();
+    setData(d);
   }, []);
 
   useEffect(() => {
@@ -26,66 +32,36 @@ export function useCrmData() {
   }, [refresh]);
 
   const addCliente = async (payload: Omit<Cliente, "id" | "createdAt">): Promise<string | null> => {
-    try {
-      const id = generateId();
-      console.log('🔵 Guardando cliente:', { ...payload, id });
-      await db.clientes.add({ ...payload, id, createdAt: new Date().toISOString() });
-      console.log('✅ Cliente guardado en IndexedDB');
-      await refresh();
-      console.log('✅ Refresh completado');
-      return id;
-    } catch (error) {
-      console.error('❌ Error guardando cliente:', error);
-      return null;
-    }
+    const res = await api("addCliente", payload);
+    if (res.ok) { await refresh(); return res.item.id; }
+    return null;
   };
 
   const deleteCliente = async (id: string) => {
-    await db.clientes.delete(id);
-    await db.movimientos.where("clienteId").equals(id).delete();
+    await api("deleteCliente", { id });
     await refresh();
   };
 
   const addMovimiento = async (payload: Omit<Movimiento, "id" | "createdAt">): Promise<boolean> => {
-    try {
-      const id = generateId();
-      await db.movimientos.add({ ...payload, id, createdAt: new Date().toISOString() });
-      await refresh();
-      return true;
-    } catch (error) {
-      console.error('❌ Error guardando movimiento:', error);
-      return false;
-    }
+    const res = await api("addMovimiento", payload);
+    if (res.ok) { await refresh(); return true; }
+    return false;
   };
 
   const deleteMovimiento = async (id: string) => {
-    await db.movimientos.delete(id);
+    await api("deleteMovimiento", { id });
     await refresh();
   };
 
   const togglePagado = async (id: string) => {
-    const mov = await db.movimientos.get(id);
-    if (mov) {
-      await db.movimientos.update(id, { pagado: !mov.pagado });
-      await refresh();
-    }
-  };
-
-  const resetAll = async () => {
-    await db.clientes.clear();
-    await db.movimientos.clear();
+    await api("togglePagado", { id });
     await refresh();
   };
 
-  return {
-    data,
-    isLoading,
-    addCliente,
-    deleteCliente,
-    addMovimiento,
-    deleteMovimiento,
-    togglePagado,
-    resetAll,
-    refresh,
+  const resetAll = async () => {
+    await api("resetAll");
+    await refresh();
   };
+
+  return { data, isLoading, addCliente, deleteCliente, addMovimiento, deleteMovimiento, togglePagado, resetAll, refresh };
 }

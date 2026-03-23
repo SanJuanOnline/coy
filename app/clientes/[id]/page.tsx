@@ -25,7 +25,7 @@ function fmtFecha(f: string) {
 export default function ClienteDetallePage() {
   const params = useParams();
   const router = useRouter();
-  const { data, addMovimiento, deleteMovimiento, togglePagado } = useCrmData();
+  const { data, isLoading, addMovimiento, deleteMovimiento, togglePagado } = useCrmData();
   
   const [enviarWhatsApp, setEnviarWhatsApp] = useState(false);
   const [enviarEmail, setEnviarEmail] = useState(false);
@@ -42,6 +42,14 @@ export default function ClienteDetallePage() {
     
     return { ...c, movimientos, ...saldo };
   }, [data, clienteId]);
+
+  if (isLoading) {
+    return (
+      <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Typography>Cargando...</Typography>
+      </Box>
+    );
+  }
 
   if (!cliente) {
     return (
