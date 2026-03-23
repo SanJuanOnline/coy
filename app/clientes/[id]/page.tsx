@@ -199,7 +199,8 @@ export default function ClienteDetallePage() {
         if (res.ok) {
           Swal.fire({ icon: "success", title: "¡Email enviado!", timer: 1500, showConfirmButton: false });
         } else {
-          Swal.fire({ icon: "error", title: "Error al enviar email", text: "Verifica la configuración", timer: 2000 });
+          const err = await res.json();
+          Swal.fire({ icon: "error", title: "Error al enviar email", text: err.error || "Error desconocido" });
         }
       }
     } catch (error) {
