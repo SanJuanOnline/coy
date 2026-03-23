@@ -8,11 +8,15 @@ interface CrmData {
   movimientos: Movimiento[];
 }
 
+function getUsername() {
+  return typeof window !== "undefined" ? sessionStorage.getItem("username") || "" : "";
+}
+
 async function api(action: string, payload?: object) {
   const res = await fetch("/api/data", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action, payload }),
+    body: JSON.stringify({ action, payload, username: getUsername() }),
   });
   return res.json();
 }
@@ -22,7 +26,8 @@ export function useCrmData() {
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    const res = await fetch("/api/data");
+    const username = getUsername();
+    const res = await fetch(`/api/data?username=${encodeURIComponent(username)}`);
     const d = await res.json();
     setData(d);
   }, []);
