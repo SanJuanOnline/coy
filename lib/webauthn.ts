@@ -1,11 +1,22 @@
-export function isWebAuthnAvailable(): boolean {
-  return typeof window !== "undefined" && 
-         window.PublicKeyCredential !== undefined &&
-         navigator.credentials !== undefined;
+export async function isWebAuthnAvailable(): Promise<boolean> {
+  if (typeof window === "undefined" || 
+      !window.PublicKeyCredential || 
+      !navigator.credentials) {
+    return false;
+  }
+  
+  try {
+    // Verificar si hay autenticadores disponibles (móvil o plataforma)
+    const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    return available;
+  } catch {
+    return false;
+  }
 }
 
 export async function registerBiometric(username: string): Promise<boolean> {
-  if (!isWebAuthnAvailable()) return false;
+  const available = await isWebAuthnAvailable();
+  if (!available) return false;
 
   try {
     const challenge = new Uint8Array(32);
@@ -14,27 +25,37 @@ export async function registerBiometric(username: string): Promise<boolean> {
     const credential = await navigator.credentials.create({
       publicKey: {
         challenge,
-        rp: { name: "CRM Coy" },
+        rp: { 
+          name: "CRM Coy",
+          id: window.location.hostname
+        },
         user: {
           id: new TextEncoder().encode(username),
           name: username,
           displayName: username,
         },
-        pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+        pubKeyCredParams: [
+          { alg: -7, type: "public-key" },  // ES256
+          { alg: -257, type: "public-key" } // RS256
+        ],
         authenticatorSelection: {
           authenticatorAttachment: "platform",
-          userVerification: "required",
+          requireResidentKey: false,
+          userVerification: "preferred",
         },
         timeout: 60000,
+        attestation: "none"
       },
     }) as PublicKeyCredential;
 
     if (!credential) return false;
 
     const response = credential.response as AuthenticatorAttestationResponse;
+    const publicKey = response.getPublicKey();
+    
     const credentialData = {
       id: credential.id,
-      publicKey: btoa(String.fromCharCode(...new Uint8Array(response.getPublicKey()!))),
+      publicKey: publicKey ? btoa(String.fromCharCode(...new Uint8Array(publicKey))) : "",
       counter: 0,
     };
 
@@ -45,13 +66,15 @@ export async function registerBiometric(username: string): Promise<boolean> {
     });
 
     return (await res.json()).ok;
-  } catch {
+  } catch (error) {
+    console.error("Error registrando biométrico:", error);
     return false;
   }
 }
 
 export async function authenticateBiometric(username: string): Promise<boolean> {
-  if (!isWebAuthnAvailable()) return false;
+  const available = await isWebAuthnAvailable();
+  if (!available) return false;
 
   try {
     const challenge = new Uint8Array(32);
@@ -60,8 +83,10 @@ export async function authenticateBiometric(username: string): Promise<boolean> 
     const credential = await navigator.credentials.get({
       publicKey: {
         challenge,
+        rpId: window.location.hostname,
         timeout: 60000,
-        userVerification: "required",
+        userVerification: "preferred",
+        allowCredentials: []
       },
     }) as PublicKeyCredential;
 
@@ -78,7 +103,8 @@ export async function authenticateBiometric(username: string): Promise<boolean> 
     });
 
     return (await res.json()).ok;
-  } catch {
+  } catch (error) {
+    console.error("Error autenticando biométrico:", error);
     return false;
   }
 }

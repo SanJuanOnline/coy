@@ -29,7 +29,7 @@ export default function LoginGuard({ children }: LoginGuardProps) {
   const [hasBiometric, setHasBiometric] = useState(false);
 
   useEffect(() => {
-    setBiometricAvailable(isWebAuthnAvailable());
+    isWebAuthnAvailable().then(setBiometricAvailable);
     
     const auth = sessionStorage.getItem("authenticated");
     if (auth === "true") {
