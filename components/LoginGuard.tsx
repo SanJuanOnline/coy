@@ -161,6 +161,57 @@ export default function LoginGuard({ children }: LoginGuardProps) {
     
     setLoading(true);
     try {
+      // Si no tiene huella registrada, ofrecer registrarla
+      if (!hasBiometric) {
+        const result = await Swal.fire({
+          title: "🔐 Configurar Huella",
+          text: "Primero debes registrar tu huella digital. ¿Deseas hacerlo ahora?",
+          icon: "question",
+          showCancelButton: true,
+          confirmButtonText: "Sí, registrar",
+          cancelButtonText: "Cancelar",
+          confirmButtonColor: "#8b5cf6",
+        });
+        
+        if (result.isConfirmed) {
+          // Verificar primero la contraseña
+          if (!password) {
+            Swal.fire({ icon: "error", title: "Error", text: "Ingresa tu contraseña para registrar la huella" });
+            setLoading(false);
+            return;
+          }
+          
+          // Verificar credenciales
+          const res = await fetch("/api/auth", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "verify", username, password })
+          });
+          const data = await res.json();
+          
+          if (!data.ok) {
+            Swal.fire({ icon: "error", title: "Error", text: "Contraseña incorrecta" });
+            setLoading(false);
+            return;
+          }
+          
+          // Registrar huella
+          const registered = await registerBiometric(username);
+          if (registered) {
+            await Swal.fire({ icon: "success", title: "¡Huella registrada!", text: "Ahora puedes usar tu huella para acceder", timer: 2000, showConfirmButton: false });
+            setHasBiometric(true);
+            sessionStorage.setItem("authenticated", "true");
+            sessionStorage.setItem("username", username);
+            setIsAuthenticated(true);
+          } else {
+            Swal.fire({ icon: "error", title: "Error", text: "No se pudo registrar la huella. Verifica que tengas biométricos configurados en tu dispositivo." });
+          }
+        }
+        setLoading(false);
+        return;
+      }
+      
+      // Si ya tiene huella, autenticar
       const success = await authenticateBiometric(username);
       if (success) {
         sessionStorage.setItem("authenticated", "true");
@@ -169,7 +220,8 @@ export default function LoginGuard({ children }: LoginGuardProps) {
       } else {
         Swal.fire({ icon: "error", title: "Error", text: "Autenticación biométrica fallida" });
       }
-    } catch {
+    } catch (error) {
+      console.error("Error biométrico:", error);
       Swal.fire({ icon: "error", title: "Error", text: "No se pudo verificar la huella" });
     }
     setLoading(false);
@@ -292,7 +344,7 @@ export default function LoginGuard({ children }: LoginGuardProps) {
               {loading ? "Verificando..." : "Ingresar"}
             </Button>
             
-            {biometricAvailable && hasBiometric && (
+            {biometricAvailable && (
               <>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, my: 0.5 }}>
                   <Box sx={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
@@ -301,7 +353,7 @@ export default function LoginGuard({ children }: LoginGuardProps) {
                 </Box>
                 <Button 
                   onClick={handleBiometricLogin} 
-                  disabled={loading}
+                  disabled={loading || !username}
                   variant="outlined"
                   startIcon={<FingerprintIcon />}
                   sx={{
@@ -317,7 +369,7 @@ export default function LoginGuard({ children }: LoginGuardProps) {
                     }
                   }}
                 >
-                  Acceder con huella
+                  {hasBiometric ? "Acceder con huella" : "Configurar huella"}
                 </Button>
               </>
             )}
