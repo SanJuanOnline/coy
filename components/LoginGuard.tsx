@@ -6,7 +6,9 @@ import LockIcon from "@mui/icons-material/Lock";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import FingerprintIcon from "@mui/icons-material/Fingerprint";
 import Swal from "sweetalert2";
+import { isWebAuthnAvailable, registerBiometric, authenticateBiometric, hasRegisteredBiometric } from "@/lib/webauthn";
 
 interface LoginGuardProps {
   children: React.ReactNode;
@@ -23,8 +25,12 @@ export default function LoginGuard({ children }: LoginGuardProps) {
   const [recovering, setRecovering] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [hasBiometric, setHasBiometric] = useState(false);
 
   useEffect(() => {
+    setBiometricAvailable(isWebAuthnAvailable());
+    
     const auth = sessionStorage.getItem("authenticated");
     if (auth === "true") {
       setIsAuthenticated(true);
@@ -37,6 +43,12 @@ export default function LoginGuard({ children }: LoginGuardProps) {
         setIsCreating(!data.hasUser);
       });
   }, []);
+
+  useEffect(() => {
+    if (username && !isCreating) {
+      hasRegisteredBiometric(username).then(setHasBiometric);
+    }
+  }, [username, isCreating]);
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +76,29 @@ export default function LoginGuard({ children }: LoginGuardProps) {
         await Swal.fire({ icon: "success", title: "¡Usuario creado!", timer: 2000, showConfirmButton: false });
         sessionStorage.setItem("authenticated", "true");
         sessionStorage.setItem("username", username);
+        
+        // Ofrecer registro biométrico
+        if (biometricAvailable) {
+          const result = await Swal.fire({
+            title: "🔐 Seguridad Biométrica",
+            text: "¿Deseas activar el acceso con huella digital?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "Sí, activar",
+            cancelButtonText: "Ahora no",
+            confirmButtonColor: "#3b82f6",
+          });
+          
+          if (result.isConfirmed) {
+            const registered = await registerBiometric(username);
+            if (registered) {
+              await Swal.fire({ icon: "success", title: "¡Huella registrada!", timer: 2000, showConfirmButton: false });
+            } else {
+              Swal.fire({ icon: "error", title: "Error", text: "No se pudo registrar la huella" });
+            }
+          }
+        }
+        
         setIsAuthenticated(true);
       } else {
         Swal.fire({ icon: "error", title: "Error", text: data.error });
@@ -116,6 +151,28 @@ export default function LoginGuard({ children }: LoginGuardProps) {
       Swal.fire({ icon: "error", title: "Error", text: "Error al recuperar credenciales" });
     }
     setRecovering(false);
+  };
+
+  const handleBiometricLogin = async () => {
+    if (!username) {
+      Swal.fire({ icon: "error", title: "Error", text: "Ingresa tu usuario primero" });
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const success = await authenticateBiometric(username);
+      if (success) {
+        sessionStorage.setItem("authenticated", "true");
+        sessionStorage.setItem("username", username);
+        setIsAuthenticated(true);
+      } else {
+        Swal.fire({ icon: "error", title: "Error", text: "Autenticación biométrica fallida" });
+      }
+    } catch {
+      Swal.fire({ icon: "error", title: "Error", text: "No se pudo verificar la huella" });
+    }
+    setLoading(false);
   };
 
   if (isAuthenticated) return <>{children}</>;
@@ -234,6 +291,37 @@ export default function LoginGuard({ children }: LoginGuardProps) {
             }}>
               {loading ? "Verificando..." : "Ingresar"}
             </Button>
+            
+            {biometricAvailable && hasBiometric && (
+              <>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, my: 0.5 }}>
+                  <Box sx={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
+                  <Typography sx={{ fontSize: "0.75rem", color: "#9ca3af", fontWeight: 600 }}>O</Typography>
+                  <Box sx={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
+                </Box>
+                <Button 
+                  onClick={handleBiometricLogin} 
+                  disabled={loading}
+                  variant="outlined"
+                  startIcon={<FingerprintIcon />}
+                  sx={{
+                    borderColor: "#8b5cf6",
+                    color: "#8b5cf6",
+                    fontWeight: 700,
+                    py: 1.5,
+                    fontSize: "1rem",
+                    textTransform: "none",
+                    "&:hover": {
+                      borderColor: "#7c3aed",
+                      background: "rgba(139, 92, 246, 0.05)"
+                    }
+                  }}
+                >
+                  Acceder con huella
+                </Button>
+              </>
+            )}
+            
             <Button onClick={() => setIsCreating(true)} sx={{ color: "#6b7280", fontSize: "0.875rem", textTransform: "none" }}>
               Crear cuenta nueva
             </Button>
