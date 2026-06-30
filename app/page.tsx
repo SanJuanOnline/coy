@@ -123,8 +123,7 @@ export default function HomePage() {
           marginBottom: "2.5rem",
           lineHeight: 1.6
         }}>
-          Controla depósitos, clientes y tiendas en una sola plataforma moderna.
-        </p>
+          Controla depósitos, clientes y mas en una solo lugar   </p>
 
         {/* CTA */}
         <Link
@@ -166,7 +165,7 @@ export default function HomePage() {
           {[
             { icon: "👥", text: "Clientes", color: "#ec4899" },
             { icon: "💰", text: "Depósitos", color: "#a855f7" },
-            { icon: "🏪", text: "Tiendas", color: "#3b82f6" },
+            { icon: "🏪", text: "Prestamos", color: "#3b82f6" },
             { icon: "📊", text: "Reportes", color: "#ec4899" },
           ].map((f, i) => (
             <div
@@ -204,4 +203,4 @@ export default function HomePage() {
       </div>
     </div>
   );
-}
+} 

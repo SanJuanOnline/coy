@@ -333,11 +333,11 @@ export default function ClienteDetallePage() {
             <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
               <Button variant="contained" startIcon={<AttachMoneyIcon />} onClick={handleNuevoIngreso}
                 sx={{ background: "linear-gradient(135deg, #8b5cf6, #6d28d9)", textTransform: "none" }}>
-                Nueva Entrada
+                Nuevo Prestamo o Entrada
               </Button>
               <Button variant="contained" startIcon={<AttachMoneyIcon />} onClick={handleNuevoPago}
                 sx={{ background: "linear-gradient(135deg, #059669, #10b981)", textTransform: "none" }}>
-                Registrar Salida
+               Pago o Abono
               </Button>
             </Box>
           </Paper>
