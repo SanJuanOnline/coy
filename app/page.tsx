@@ -79,7 +79,7 @@ export default function HomePage() {
                 letterSpacing: "0.1em",
                 opacity: 0.9
               }}>
-                FINANCE
+                MIS FINANZAS
               </span>
             </div>
           </div>
@@ -95,8 +95,17 @@ export default function HomePage() {
           WebkitTextFillColor: "transparent",
           textShadow: "0 0 30px rgba(236, 72, 153, 0.3)"
         }}>
-          CRM Coy
+          Mis Finanzas
         </h1>
+        <p style={{
+          fontSize: "0.875rem",
+          fontWeight: 500,
+          color: theme === "dark" ? "#a855f7" : "#a855f7",
+          marginBottom: "0.5rem",
+          letterSpacing: "0.1em"
+        }}>
+          & CRMCOY
+        </p>
 
         <p style={{
           fontSize: "1.125rem",

@@ -37,10 +37,27 @@ export default function LoginGuard({ children }: LoginGuardProps) {
       return;
     }
     fetch("/api/auth")
-      .then(res => res.json())
+      .then(async (res) => {
+        if (!res.ok) {
+          console.warn("Auth API no disponible, usando modo local");
+          return { hasUser: false };
+        }
+        const text = await res.text();
+        if (!text) {
+          console.warn("Respuesta vacía de Auth API, usando modo local");
+          return { hasUser: false };
+        }
+        return JSON.parse(text);
+      })
       .then(data => {
         setHasUser(data.hasUser);
         setIsCreating(!data.hasUser);
+      })
+      .catch((error) => {
+        console.error("Error cargando auth:", error);
+        // En caso de error, permitir crear usuario local
+        setHasUser(false);
+        setIsCreating(true);
       });
   }, []);
 
@@ -141,13 +158,25 @@ export default function LoginGuard({ children }: LoginGuardProps) {
     setRecovering(true);
     try {
       const res = await fetch("/api/recover", { method: "POST" });
-      const data = await res.json();
+      if (!res.ok) {
+        Swal.fire({ icon: "error", title: "Error", text: "No se pudo enviar el correo" });
+        setRecovering(false);
+        return;
+      }
+      const text = await res.text();
+      if (!text) {
+        Swal.fire({ icon: "error", title: "Error", text: "Respuesta vacía del servidor" });
+        setRecovering(false);
+        return;
+      }
+      const data = JSON.parse(text);
       if (data.ok) {
         await Swal.fire({ icon: "success", title: "¡Correo enviado!", text: "Revisa tu bandeja de entrada", timer: 3000 });
       } else {
-        Swal.fire({ icon: "error", title: "Error", text: "No se pudo enviar el correo" });
+        Swal.fire({ icon: "error", title: "Error", text: data.error || "Error desconocido" });
       }
-    } catch {
+    } catch (error) {
+      console.error("Error en recuperación:", error);
       Swal.fire({ icon: "error", title: "Error", text: "Error al recuperar credenciales" });
     }
     setRecovering(false);
@@ -269,7 +298,10 @@ export default function LoginGuard({ children }: LoginGuardProps) {
           }}>
             {isCreating ? <PersonAddIcon sx={{ fontSize: 40, color: "#fff" }} /> : <LockIcon sx={{ fontSize: 40, color: "#fff" }} />}
           </Box>
-          <Typography variant="h4" sx={{ fontWeight: 900, color: "#0f172a", mb: 1 }}>CRM Coy</Typography>
+          <Typography variant="h4" sx={{ fontWeight: 900, color: "#0f172a", mb: 1 }}>Mis Finanzas</Typography>
+          <Typography sx={{ fontSize: "0.75rem", color: "#a855f7", fontWeight: 600, letterSpacing: "0.1em", mb: 1 }}>
+            & CRMCOY
+          </Typography>
           <Typography sx={{ fontSize: "0.9rem", color: "#64748b" }}>
             {isCreating ? "Crea tu cuenta" : "Iniciar sesión"}
           </Typography>

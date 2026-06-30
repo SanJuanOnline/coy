@@ -99,7 +99,7 @@ export default function ClienteDetallePage() {
       });
       
       if (ok) {
-        Swal.fire({ icon: "success", title: "¡Entrada registrada!", timer: 1500, showConfirmButton: false });
+        Swal.fire({ icon: "success", title: "¡Nuevo Prestamo!", timer: 1500, showConfirmButton: false });
       }
     }
   };
@@ -109,7 +109,7 @@ export default function ClienteDetallePage() {
     const opcionesConceptos = entradas.map(e => `<option value="${e.concepto}">${e.concepto}</option>`).join("");
 
     const { value: formValues } = await Swal.fire({
-      title: "✅ Registrar Salida",
+      title: "✅Abono o Pago",
       html: `
         <input id="monto" type="number" step="0.01" class="swal2-input" placeholder="Monto" required>
         ${entradas.length > 0

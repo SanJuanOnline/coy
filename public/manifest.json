@@ -1,6 +1,6 @@
 {
-  "name": "CRM Coy",
-  "short_name": "CRM Coy",
+  "name": "Mis Finanzas & CRMCOY",
+  "short_name": "Mis Finanzas",
   "description": "Tu gestor financiero inteligente - Controla depósitos, clientes y tiendas",
   "start_url": "/",
   "display": "standalone",

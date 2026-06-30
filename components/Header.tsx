@@ -92,7 +92,10 @@ export default function Header() {
           <span className="logo-icon">
             <Wallet style={{ width: 18, height: 18, color: "#fff" }} />
           </span>
-          <span className="logo-text">COY</span>
+          <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
+            <span className="logo-text" style={{ fontSize: "1.125rem" }}>Mis Finanzas</span>
+            <span style={{ fontSize: "0.625rem", fontWeight: 400, opacity: 0.7, letterSpacing: "0.05em" }}>& CRMCOY</span>
+          </div>
         </Link>
 
         <nav className="hidden md:flex items-center gap-2">
