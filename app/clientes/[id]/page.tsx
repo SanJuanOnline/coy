@@ -337,7 +337,7 @@ export default function ClienteDetallePage() {
               </Button>
               <Button variant="contained" startIcon={<AttachMoneyIcon />} onClick={handleNuevoPago}
                 sx={{ background: "linear-gradient(135deg, #059669, #10b981)", textTransform: "none" }}>
-               Pago o Abono
+                Nuevo Pago o Abono
               </Button>
             </Box>
           </Paper>
